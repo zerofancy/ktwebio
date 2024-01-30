@@ -9,24 +9,27 @@ class MainHandler: HttpHandler {
     val openPageWaiter = ResponseWaiter()
     val contentViewedWaiter = ResponseWaiter()
 
-    private val contentBuffer = mutableListOf<String>()
+    private val contentBuffer = mutableListOf<IWebIOContent>()
     private var serverContentVersion = 0L
     private var clientContentVersion = 0L
 
     private val pathMatcher = PathMatcher<(HttpServerExchange) -> Unit>()
 
     init {
-        addContent("Hello World!")
-
         pathMatcher.addExactPath("/", ::mainPage)
         pathMatcher.addExactPath("/version", ::updateContentVersion)
     }
 
-    fun addContent(content: String) {
+    fun addContent(content: IWebIOContent) {
         synchronized(contentBuffer) {
             contentBuffer.add(content)
             serverContentVersion++
         }
+    }
+
+    fun clearContent() = synchronized(contentBuffer) {
+        contentBuffer.clear()
+        serverContentVersion++
     }
 
     override fun handleRequest(exchange: HttpServerExchange) {
@@ -38,13 +41,28 @@ class MainHandler: HttpHandler {
         openPageWaiter.notifyEvent()
 
         val html = """
-            <html>
+            <!doctype html>
+            <html lang="zh-Hans">
             <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <link href="webjars/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
             <title>KtWebIO</title>
             </head>
             <body>
-            <h1>KTWebIO</h1>
-            ${contentBuffer.joinToString("<br />")}
+            <div class="container">
+                <div class="card">
+                  <div class="card-header">
+                    KTWebIO
+                  </div>
+                  <div class="card-body">
+                    ${contentBuffer.joinToString("\n", transform = IWebIOContent::getHtml)}
+                  </div>
+                  <div class="card-footer text-muted">
+                    Powered by <a href="https://github.com/zerofancy/ktwebio" class="card-link">KTWebIO</a>
+                  </div>
+                </div>
+            </div>
             <script src="version?version=$serverContentVersion" />
             </body>
             </html>

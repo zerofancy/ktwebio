@@ -4,7 +4,6 @@ import io.undertow.Undertow
 import io.undertow.server.handlers.PathHandler
 import io.undertow.server.handlers.resource.ClassPathResourceManager
 import io.undertow.server.handlers.resource.ResourceHandler
-import io.undertow.util.Headers
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -46,6 +45,7 @@ suspend fun webIOScope(block: suspend KTWebIO.() -> Unit) = withContext(Dispatch
     println("You opened page.")
     block(webIO)
     webIO.httpHandler.contentViewedWaiter.waitEvent()
+    delay(3_000) // 延迟一点，避免最后一页的静态资源没有加载好
     server.stop()
 }
 
@@ -56,7 +56,12 @@ fun webIOBlock(block: suspend KTWebIO.() -> Unit) = runBlocking {
 class KTWebIO {
     internal val httpHandler = MainHandler()
 
-    suspend fun input() {
-        httpHandler.addContent("test")
+    fun putText(content: String) {
+        httpHandler.addContent(StringWebContent(content))
+    }
+
+    suspend fun input(name: String): String {
+
+        TODO()
     }
 }

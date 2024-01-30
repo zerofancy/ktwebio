@@ -38,6 +38,8 @@ dependencies {
     implementation ("io.undertow:undertow-websockets-jsr:2.2.10.Final")
     // https://mvnrepository.com/artifact/org.webjars/bootstrap
     implementation("org.webjars:bootstrap:5.3.2")
+    // https://mvnrepository.com/artifact/org.apache.commons/commons-text
+    implementation("org.apache.commons:commons-text:1.11.0")
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
