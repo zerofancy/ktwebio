@@ -20,13 +20,13 @@ suspend fun webIOScope(block: suspend KTWebIO.() -> Unit) = withContext(Dispatch
     val port = s.localPort
     s.close()
 
-    val waiter = ResponseWaiter()
+    val webIO = KTWebIO()
     val handler = PathHandler().apply {
-        addExactPath("/") { exchange ->
-            exchange.responseHeaders.put(Headers.CONTENT_TYPE, "text/plain")
-            exchange.responseSender.send("Hello World")
-            waiter.notifyEvent()
-        }.addPrefixPath("/webjars", ResourceHandler(ClassPathResourceManager(javaClass.classLoader, "META-INF/resources/webjars")))
+        addPrefixPath(
+            "/webjars",
+            ResourceHandler(ClassPathResourceManager(javaClass.classLoader, "META-INF/resources/webjars"))
+        )
+        addPrefixPath("/", webIO.httpHandler)
     }
     val server = Undertow.builder()
         .addHttpListener(port, "localhost")
@@ -42,9 +42,10 @@ suspend fun webIOScope(block: suspend KTWebIO.() -> Unit) = withContext(Dispatch
     }
 
     // wait url open
-    waiter.waitEvent()
+    webIO.httpHandler.openPageWaiter.waitEvent()
     println("You opened page.")
-    block(KTWebIO)
+    block(webIO)
+    webIO.httpHandler.contentViewedWaiter.waitEvent()
     server.stop()
 }
 
@@ -52,10 +53,10 @@ fun webIOBlock(block: suspend KTWebIO.() -> Unit) = runBlocking {
     webIOScope(block)
 }
 
-object KTWebIO {
+class KTWebIO {
+    internal val httpHandler = MainHandler()
+
     suspend fun input() {
-        while (true) {
-            delay(60_000)
-        }
+        httpHandler.addContent("test")
     }
 }
