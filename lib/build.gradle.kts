@@ -20,22 +20,20 @@ repositories {
 
 dependencies {
     // Use the Kotlin JUnit 5 integration.
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+    // testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 
     // Use the JUnit 5 integration.
-    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.9.3")
+    // testImplementation("org.junit.jupiter:junit-jupiter-engine:5.9.3")
 
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    //testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     // This dependency is exported to consumers, that is to say found on their compile classpath.
-    api("org.apache.commons:commons-math3:3.6.1")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0-RC2")
 
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
-    implementation("com.google.guava:guava:32.1.1-jre")
     implementation ("io.undertow:undertow-core:2.2.27.Final")
-    implementation ("io.undertow:undertow-servlet:2.2.0.Final")
-    implementation ("io.undertow:undertow-websockets-jsr:2.2.10.Final")
+//    implementation ("io.undertow:undertow-servlet:2.2.0.Final")
+//    implementation ("io.undertow:undertow-websockets-jsr:2.2.10.Final")
     // https://mvnrepository.com/artifact/org.webjars/bootstrap
     implementation("org.webjars:bootstrap:5.3.2")
     // https://mvnrepository.com/artifact/org.apache.commons/commons-text
