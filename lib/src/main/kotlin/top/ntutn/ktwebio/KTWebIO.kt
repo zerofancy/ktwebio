@@ -61,6 +61,10 @@ class KTWebIO {
         httpHandler.addContent(StringWebContent(content))
     }
 
+    fun clearContent() {
+        httpHandler.clearContent()
+    }
+
     suspend fun input(name: String): String {
 
         TODO()
