@@ -21,6 +21,7 @@ suspend fun webIOScope(block: suspend KTWebIO.() -> Unit) = withContext(Dispatch
 
     val webIO = KTWebIO()
     val handler = PathHandler().apply {
+        addExactPath("favicon.ico", ResourceHandler(ClassPathResourceManager(javaClass.classLoader, "webio/static/favicon.ico")))
         addPrefixPath(
             "/webjars",
             ResourceHandler(ClassPathResourceManager(javaClass.classLoader, "META-INF/resources/webjars"))
