@@ -54,6 +54,8 @@ class MainHandler: HttpHandler {
                 <div class="card">
                   <div class="card-header">
                     KTWebIO
+                    <span id="online_badge" class="badge bg-success">Online</span>
+                    <span id="offline_badge" class="badge bg-danger" style="display:none">Offline</span>
                   </div>
                   <div class="card-body">
                     ${contentBuffer.joinToString("\n", transform = IWebIOContent::getHtml)}
@@ -68,13 +70,14 @@ class MainHandler: HttpHandler {
                     fetch("version?version=$serverContentVersion")
                         .then((response) => response.json())
                         .then(function(value) {
-                            console.log(value)
                             if (value != $serverContentVersion) {
                                 location.reload()
                             }
                         })
                         .catch(function(e) {
                             clearInterval(intervalId)
+                            document.getElementById("online_badge").style.display = "none"
+                            document.getElementById("offline_badge").style.display = "inline"                            
                         })
                 }, 1000)
             </script>
