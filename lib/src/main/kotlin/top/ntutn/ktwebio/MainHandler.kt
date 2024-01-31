@@ -47,7 +47,7 @@ class MainHandler: HttpHandler {
                 <meta charset="utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1">
                 <link href="webjars/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
-            <title>KtWebIO</title>
+                <title>KtWebIO</title>
             </head>
             <body>
             <div class="container">
@@ -63,7 +63,21 @@ class MainHandler: HttpHandler {
                   </div>
                 </div>
             </div>
-            <script src="version?version=$serverContentVersion" />
+            <script>
+                const intervalId = setInterval(function() {
+                    fetch("version?version=$serverContentVersion")
+                        .then((response) => response.json())
+                        .then(function(value) {
+                            console.log(value)
+                            if (value != $serverContentVersion) {
+                                location.reload()
+                            }
+                        })
+                        .catch(function(e) {
+                            clearInterval(intervalId)
+                        })
+                }, 1000)
+            </script>
             </body>
             </html>
         """.trimIndent()
@@ -80,6 +94,6 @@ class MainHandler: HttpHandler {
         if (clientContentVersion == serverContentVersion) {
             contentViewedWaiter.notifyEvent()
         }
-        exchange.responseSender.send("")
+        exchange.responseSender.send(serverContentVersion.toString())
     }
 }
