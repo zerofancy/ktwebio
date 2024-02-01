@@ -3,6 +3,7 @@ package top.ntutn.ktwebio
 import io.undertow.server.HttpHandler
 import io.undertow.server.HttpServerExchange
 import io.undertow.server.handlers.form.FormData
+import io.undertow.server.handlers.form.FormDataParser
 import io.undertow.server.handlers.form.FormEncodedDataDefinition
 import io.undertow.server.handlers.form.FormParserFactory
 import io.undertow.server.handlers.form.MultiPartParserDefinition
@@ -21,15 +22,15 @@ class MainHandler: HttpHandler {
     private var clientContentVersion = 0L
 
     private val pathMatcher = PathMatcher<(HttpServerExchange) -> Unit>()
-    private val parserFactory = FormParserFactory.builder().addParsers(FormEncodedDataDefinition(), MultiPartParserDefinition()).build()
-    private val formDataKey = AttachmentKey.create(FormData::class.java);
+    private val parserFactory = FormParserFactory.builder().build()
+    private val formDataKey = FormDataParser.FORM_DATA
 
     private var formData: FormData? = null
 
     init {
         pathMatcher.addExactPath("/", ::mainPage)
         pathMatcher.addExactPath("/version", ::updateContentVersion)
-        pathMatcher.addExactPath("/submit", ::updateContentVersion)
+        pathMatcher.addExactPath("/submit", ::submitUserInput)
     }
 
     fun addContent(content: IWebIOContent) {
@@ -50,8 +51,21 @@ class MainHandler: HttpHandler {
     }
 
     private fun mainPage(exchange: HttpServerExchange) {
-        val (serverVersion, contentString) = synchronized(contentBuffer) {
-            serverContentVersion to contentBuffer.joinToString("\n", transform = IWebIOContent::getHtml)
+        val (serverVersion, contentString, buttonJs) = synchronized(contentBuffer) {
+            val content = contentBuffer.joinToString("\n", transform = IWebIOContent::getHtml)
+            // todo using form data
+            val inputContents = contentBuffer.filterIsInstance<InputContent>()
+            val (buttonHtml, buttonJs) = if (inputContents.isNotEmpty()) {
+                """
+                    <button id="form_submit">提交</button>
+                """.trimIndent() to """
+                    const formData = new FormData()
+                    ${inputContents.joinToString("\n", transform = InputContent::readValueJs)}
+                """.trimIndent()
+            } else {
+                "" to ""
+            }
+            Triple(serverContentVersion, content + buttonHtml, buttonJs)
         }
 
         openPageWaiter.notifyEvent()
@@ -96,6 +110,24 @@ class MainHandler: HttpHandler {
                             document.getElementById("offline_badge").style.display = "inline"                            
                         })
                 }, 1000)
+                const submitButton = document.getElementById("form_submit")
+                if (submitButton !== null) {
+                    submitButton.addEventListener("click", function() {
+                        $buttonJs
+                        // Display the key/value pairs
+                        for (var pair of formData.entries())
+                        {
+                         console.log(pair[0]+ ', '+ pair[1]); 
+                        }
+                        fetch("submit", {
+                            method: "POST",
+                            body: formData
+                        })
+                        .then(function(value) {
+                            location.reload()
+                        })
+                    })
+                }
             </script>
             </body>
             </html>
@@ -117,10 +149,12 @@ class MainHandler: HttpHandler {
     }
 
     private fun submitUserInput(exchange: HttpServerExchange) {
-        formData = exchange.getAttachment(formDataKey)
+        exchange.startBlocking()
+        val parser = parserFactory.createParser(exchange)
 
-        exchange.setStatusCode(StatusCodes.FOUND)
-        exchange.responseHeaders.put(Headers.LOCATION, "/")
-        exchange.endExchange()
+        parser.parse {
+            exchange.responseSender.send("")
+            formData = it.getAttachment(formDataKey)
+        }
     }
 }

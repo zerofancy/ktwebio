@@ -21,7 +21,9 @@ private suspend fun KTWebIO.storyDemo() {
 private suspend fun KTWebIO.inputDemo() {
     putText("这是一个用户输入示例")
     input("test")
-    delay(10_000)
+    input("test1")
+    input("test2")
+    delay(100_000)
 }
 
 fun main() = webIOBlock {
