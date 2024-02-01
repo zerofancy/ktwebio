@@ -2,7 +2,7 @@ package top.ntutn.ktwebio
 
 import kotlinx.coroutines.delay
 
-fun main() = webIOBlock {
+private suspend fun KTWebIO.storyDemo() {
     while (true) {
         putText("从前有座山")
         delay(3000)
@@ -16,4 +16,14 @@ fun main() = webIOBlock {
         delay(3000)
         clearContent()
     }
+}
+
+private suspend fun KTWebIO.inputDemo() {
+    putText("这是一个用户输入示例")
+    input("test")
+    delay(10_000)
+}
+
+fun main() = webIOBlock {
+    inputDemo()
 }

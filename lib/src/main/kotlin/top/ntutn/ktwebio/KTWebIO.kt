@@ -66,7 +66,7 @@ class KTWebIO {
     }
 
     suspend fun input(name: String): String {
-
-        TODO()
+        httpHandler.addContent(TextInputContent())
+        return "todo"
     }
 }

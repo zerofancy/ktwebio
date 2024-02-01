@@ -2,8 +2,15 @@ package top.ntutn.ktwebio
 
 import io.undertow.server.HttpHandler
 import io.undertow.server.HttpServerExchange
+import io.undertow.server.handlers.form.FormData
+import io.undertow.server.handlers.form.FormEncodedDataDefinition
+import io.undertow.server.handlers.form.FormParserFactory
+import io.undertow.server.handlers.form.MultiPartParserDefinition
+import io.undertow.util.AttachmentKey
+import io.undertow.util.Headers
 import io.undertow.util.PathMatcher
 import io.undertow.util.StatusCodes
+import java.util.concurrent.ConcurrentLinkedQueue
 
 class MainHandler: HttpHandler {
     val openPageWaiter = ResponseWaiter()
@@ -14,10 +21,15 @@ class MainHandler: HttpHandler {
     private var clientContentVersion = 0L
 
     private val pathMatcher = PathMatcher<(HttpServerExchange) -> Unit>()
+    private val parserFactory = FormParserFactory.builder().addParsers(FormEncodedDataDefinition(), MultiPartParserDefinition()).build()
+    private val formDataKey = AttachmentKey.create(FormData::class.java);
+
+    private var formData: FormData? = null
 
     init {
         pathMatcher.addExactPath("/", ::mainPage)
         pathMatcher.addExactPath("/version", ::updateContentVersion)
+        pathMatcher.addExactPath("/submit", ::updateContentVersion)
     }
 
     fun addContent(content: IWebIOContent) {
@@ -38,6 +50,10 @@ class MainHandler: HttpHandler {
     }
 
     private fun mainPage(exchange: HttpServerExchange) {
+        val (serverVersion, contentString) = synchronized(contentBuffer) {
+            serverContentVersion to contentBuffer.joinToString("\n", transform = IWebIOContent::getHtml)
+        }
+
         openPageWaiter.notifyEvent()
 
         val html = """
@@ -58,7 +74,7 @@ class MainHandler: HttpHandler {
                     <span id="offline_badge" class="badge bg-danger" style="display:none">Offline</span>
                   </div>
                   <div class="card-body">
-                    ${contentBuffer.joinToString("\n", transform = IWebIOContent::getHtml)}
+                    $contentString
                   </div>
                   <div class="card-footer text-muted">
                     Powered by <a href="https://github.com/zerofancy/ktwebio" class="card-link">KTWebIO</a>
@@ -67,10 +83,10 @@ class MainHandler: HttpHandler {
             </div>
             <script>
                 const intervalId = setInterval(function() {
-                    fetch("version?version=$serverContentVersion")
+                    fetch("version?version=$serverVersion")
                         .then((response) => response.json())
                         .then(function(value) {
-                            if (value != $serverContentVersion) {
+                            if (value != $serverVersion) {
                                 location.reload()
                             }
                         })
@@ -98,5 +114,13 @@ class MainHandler: HttpHandler {
             contentViewedWaiter.notifyEvent()
         }
         exchange.responseSender.send(serverContentVersion.toString())
+    }
+
+    private fun submitUserInput(exchange: HttpServerExchange) {
+        formData = exchange.getAttachment(formDataKey)
+
+        exchange.setStatusCode(StatusCodes.FOUND)
+        exchange.responseHeaders.put(Headers.LOCATION, "/")
+        exchange.endExchange()
     }
 }
