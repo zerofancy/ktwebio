@@ -21,10 +21,10 @@ private suspend fun KTWebIO.storyDemo() {
 
 private suspend fun KTWebIO.inputDemo() {
     putText("这是一个用户输入示例")
-    val name = input()
+    val name = inputSuspend("姓名")
     putText("你好, $name, 接下来我们试试一次性输入多个值。")
-    input("a")
-    input("b")
+    input("sex", "性别", value = "男")
+    input("age", "年龄")
     val data = formInput()
     data?.let { data ->
         data.forEach {

@@ -69,13 +69,13 @@ class KTWebIO {
         httpHandler.clearContent()
     }
 
-    fun input(name: String) { // nowait vs wait
-        httpHandler.addContent(TextInputContent(name))
+    fun input(name: String, label: String, value: String = "") { // nowait vs wait
+        httpHandler.addContent(TextInputContent(name, label, value))
     }
 
-    suspend fun input(): String? {
+    suspend fun inputSuspend(label: String, value: String = ""): String? {
         val key = UUID.randomUUID().toString()
-        httpHandler.addContent(TextInputContent(key))
+        httpHandler.addContent(TextInputContent(key, label, value))
         httpHandler.submitWaiter.waitEvent()
         val value = httpHandler.formData?.get(key)?.first?.value
         return value

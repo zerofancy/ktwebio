@@ -1,12 +1,13 @@
 package top.ntutn.ktwebio
 
-import java.util.UUID
-
-class TextInputContent(key: String): InputContent() {
+class TextInputContent(key: String, private val label: String, private val value: String): InputContent() {
     private val fieldName: String = key
 
     override fun getHtml(): String = """
-        <input id="$fieldName"/>
+        <div class="mb-3">
+          <label for="$fieldName" class="form-label">$label</label>
+          <input class="form-control" id="$fieldName" placeholder="" value="$value">
+        </div>
     """.trimIndent()
 
     override fun readValueJs(): String = """

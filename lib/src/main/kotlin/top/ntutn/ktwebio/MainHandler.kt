@@ -66,7 +66,7 @@ class MainHandler: HttpHandler {
             val inputContents = contentBuffer.filterIsInstance<InputContent>()
             val (buttonHtml, buttonJs) = if (inputContents.isNotEmpty()) {
                 """
-                    <button id="form_submit">提交</button>
+                    <button id="form_submit" type="button" class="btn btn-primary">Submit</button>
                 """.trimIndent() to """
                     const formData = new FormData()
                     ${inputContents.joinToString("\n", transform = InputContent::readValueJs)}
