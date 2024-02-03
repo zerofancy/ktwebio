@@ -2,8 +2,8 @@ package top.ntutn.ktwebio
 
 import java.util.UUID
 
-class TextInputContent(key: String? = null): InputContent() {
-    private val fieldName: String = key ?: UUID.randomUUID().toString()
+class TextInputContent(key: String): InputContent() {
+    private val fieldName: String = key
 
     override fun getHtml(): String = """
         <input id="$fieldName"/>

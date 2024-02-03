@@ -1,7 +1,9 @@
 package top.ntutn.ktwebio
 
 import io.undertow.Undertow
+import io.undertow.UndertowOptions
 import io.undertow.server.handlers.PathHandler
+import io.undertow.server.handlers.form.FormData
 import io.undertow.server.handlers.resource.ClassPathResourceManager
 import io.undertow.server.handlers.resource.ResourceHandler
 import kotlinx.coroutines.Dispatchers
@@ -10,6 +12,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.net.ServerSocket
 import java.net.URI
+import java.util.UUID
 
 /**
  * webjars路径示例 http://localhost:39861/webjars/bootstrap/5.3.2/js/bootstrap.min.js
@@ -31,6 +34,7 @@ suspend fun webIOScope(block: suspend KTWebIO.() -> Unit) = withContext(Dispatch
     val server = Undertow.builder()
         .addHttpListener(port, "localhost")
         .setHandler(handler)
+        .setServerOption(UndertowOptions.URL_CHARSET, "UTF-8")
         .build()
     server.start()
     val url = URI("http://localhost:${port}")
@@ -65,8 +69,20 @@ class KTWebIO {
         httpHandler.clearContent()
     }
 
-    suspend fun input(name: String): String {
-        httpHandler.addContent(TextInputContent())
-        return "todo"
+    fun input(name: String) { // nowait vs wait
+        httpHandler.addContent(TextInputContent(name))
+    }
+
+    suspend fun input(): String? {
+        val key = UUID.randomUUID().toString()
+        httpHandler.addContent(TextInputContent(key))
+        httpHandler.submitWaiter.waitEvent()
+        val value = httpHandler.formData?.get(key)?.first?.value
+        return value
+    }
+
+    suspend fun formInput(): FormData? {
+        httpHandler.submitWaiter.waitEvent()
+        return httpHandler.formData
     }
 }

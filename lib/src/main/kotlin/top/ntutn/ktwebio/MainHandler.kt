@@ -16,16 +16,25 @@ import java.util.concurrent.ConcurrentLinkedQueue
 class MainHandler: HttpHandler {
     val openPageWaiter = ResponseWaiter()
     val contentViewedWaiter = ResponseWaiter()
+    val submitWaiter = ResponseWaiter()
 
     private val contentBuffer = mutableListOf<IWebIOContent>()
     private var serverContentVersion = 0L
     private var clientContentVersion = 0L
 
     private val pathMatcher = PathMatcher<(HttpServerExchange) -> Unit>()
-    private val parserFactory = FormParserFactory.builder().build()
+    private val parserFactory = FormParserFactory.builder(false)
+        .addParser(FormEncodedDataDefinition().also {
+            it.setDefaultEncoding("UTF-8")
+        })
+        .addParser(MultiPartParserDefinition().also {
+            it.setDefaultEncoding("UTF-8")
+        })
+        .build()
     private val formDataKey = FormDataParser.FORM_DATA
 
-    private var formData: FormData? = null
+    var formData: FormData? = null
+        private set
 
     init {
         pathMatcher.addExactPath("/", ::mainPage)
@@ -155,6 +164,8 @@ class MainHandler: HttpHandler {
         parser.parse {
             exchange.responseSender.send("")
             formData = it.getAttachment(formDataKey)
+            submitWaiter.notifyEvent()
+            clearContent()
         }
     }
 }

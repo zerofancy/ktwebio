@@ -1,5 +1,6 @@
 package top.ntutn.ktwebio
 
+import io.undertow.server.handlers.form.FormData
 import kotlinx.coroutines.delay
 
 private suspend fun KTWebIO.storyDemo() {
@@ -20,10 +21,17 @@ private suspend fun KTWebIO.storyDemo() {
 
 private suspend fun KTWebIO.inputDemo() {
     putText("这是一个用户输入示例")
-    input("test")
-    input("test1")
-    input("test2")
-    delay(100_000)
+    val name = input()
+    putText("你好, $name, 接下来我们试试一次性输入多个值。")
+    input("a")
+    input("b")
+    val data = formInput()
+    data?.let { data ->
+        data.forEach {
+            val value = data[it].joinToString(transform = FormData.FormValue::getValue)
+            putText("$it:$value")
+        }
+    }
 }
 
 fun main() = webIOBlock {
