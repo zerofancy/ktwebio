@@ -11,6 +11,8 @@ plugins {
 
     // Apply the java-library plugin for API and implementation separation.
     `java-library`
+
+    id("maven-publish")
 }
 
 repositories {
@@ -50,4 +52,28 @@ java {
 tasks.named<Test>("test") {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+}
+
+val GROUP_ID = "top.ntutn.ktwebio"
+val ARTIFACT_ID = "lib"
+val VERSION = latestGitTag().ifEmpty { "0.0.1" }
+
+fun latestGitTag(): String {
+    val process = ProcessBuilder("git", "describe", "--tags", "--abbrev=0").start()
+    return  process.inputStream.bufferedReader().use {bufferedReader ->
+        bufferedReader.readText().trim()
+    }
+}
+
+publishing {
+    publications {
+        register<MavenPublication>("release") {
+            groupId = GROUP_ID
+            artifactId = ARTIFACT_ID
+            version = VERSION
+            afterEvaluate {
+                from(components["java"])
+            }
+        }
+    }
 }
