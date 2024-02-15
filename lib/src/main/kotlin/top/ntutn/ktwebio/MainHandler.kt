@@ -2,23 +2,20 @@ package top.ntutn.ktwebio
 
 import io.undertow.server.HttpHandler
 import io.undertow.server.HttpServerExchange
-import io.undertow.server.handlers.form.FormData
-import io.undertow.server.handlers.form.FormDataParser
-import io.undertow.server.handlers.form.FormEncodedDataDefinition
-import io.undertow.server.handlers.form.FormParserFactory
-import io.undertow.server.handlers.form.MultiPartParserDefinition
-import io.undertow.util.AttachmentKey
+import io.undertow.server.handlers.form.*
 import io.undertow.util.Headers
 import io.undertow.util.PathMatcher
 import io.undertow.util.StatusCodes
-import java.util.concurrent.ConcurrentLinkedQueue
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import top.ntutn.ktwebio.model.JsonContentWrapper
 
 class MainHandler: HttpHandler {
     val openPageWaiter = ResponseWaiter()
     val contentViewedWaiter = ResponseWaiter()
     val submitWaiter = ResponseWaiter()
 
-    private val contentBuffer = mutableListOf<IWebIOContent>()
+    private val contentBuffer = mutableListOf<WebIOContent>()
     private var serverContentVersion = 0L
     private var clientContentVersion = 0L
 
@@ -38,11 +35,12 @@ class MainHandler: HttpHandler {
 
     init {
         pathMatcher.addExactPath("/", ::mainPage)
+        pathMatcher.addExactPath("/json", ::getJson)
         pathMatcher.addExactPath("/version", ::updateContentVersion)
         pathMatcher.addExactPath("/submit", ::submitUserInput)
     }
 
-    fun addContent(content: IWebIOContent) {
+    fun addContent(content: WebIOContent) {
         synchronized(contentBuffer) {
             contentBuffer.add(content)
             serverContentVersion++
@@ -59,9 +57,20 @@ class MainHandler: HttpHandler {
         match.value?.invoke(exchange) ?: exchange.setStatusCode(StatusCodes.NOT_FOUND)
     }
 
+    private fun getJson(exchange: HttpServerExchange) {
+//        val version = exchange.queryParameters["version"]?.firstOrNull()?.toLongOrNull()
+        val data = JsonContentWrapper(serverContentVersion, contentBuffer)
+        val jsonString = Json.encodeToString(data)
+
+        openPageWaiter.notifyEvent()
+
+        exchange.responseHeaders.add(Headers.CONTENT_TYPE, "application/json")
+        exchange.responseSender.send(jsonString)
+    }
+
     private fun mainPage(exchange: HttpServerExchange) {
         val (serverVersion, contentString, buttonJs) = synchronized(contentBuffer) {
-            val content = contentBuffer.joinToString("\n", transform = IWebIOContent::getHtml)
+            val content = ""//contentBuffer.joinToString("\n", transform = IWebIOContent::getHtml)
             // todo using form data
             val inputContents = contentBuffer.filterIsInstance<InputContent>()
             val (buttonHtml, buttonJs) = if (inputContents.isNotEmpty()) {

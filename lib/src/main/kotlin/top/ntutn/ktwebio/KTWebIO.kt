@@ -24,12 +24,13 @@ suspend fun webIOScope(block: suspend KTWebIO.() -> Unit) = withContext(Dispatch
 
     val webIO = KTWebIO()
     val handler = PathHandler().apply {
-        addExactPath("favicon.ico", ResourceHandler(ClassPathResourceManager(javaClass.classLoader, "webio/static/favicon.ico")))
-        addPrefixPath(
-            "/webjars",
-            ResourceHandler(ClassPathResourceManager(javaClass.classLoader, "META-INF/resources/webjars"))
-        )
-        addPrefixPath("/", webIO.httpHandler)
+        //addExactPath("favicon.ico", ResourceHandler(ClassPathResourceManager(javaClass.classLoader, "webio/static/favicon.ico")))
+//        addPrefixPath(
+//            "/webjars",
+//            ResourceHandler(ClassPathResourceManager(javaClass.classLoader, "META-INF/resources/webjars"))
+//        )
+        addPrefixPath("/", ResourceHandler(ClassPathResourceManager(javaClass.classLoader, "productionExecutable")))
+        addPrefixPath("/api", webIO.httpHandler)
     }
     val server = Undertow.builder()
         .addHttpListener(port, "localhost")
@@ -62,7 +63,7 @@ class KTWebIO {
     internal val httpHandler = MainHandler()
 
     fun putText(content: String) {
-        httpHandler.addContent(StringWebContent(content))
+        httpHandler.addContent(WebIOContent(0, content))
     }
 
     fun clearContent() {
@@ -70,12 +71,12 @@ class KTWebIO {
     }
 
     fun input(name: String, label: String, value: String = "") { // nowait vs wait
-        httpHandler.addContent(TextInputContent(name, label, value))
+        //httpHandler.addContent(TextInputContent(name, label, value))
     }
 
     suspend fun inputSuspend(label: String, value: String = ""): String? {
         val key = UUID.randomUUID().toString()
-        httpHandler.addContent(TextInputContent(key, label, value))
+        //httpHandler.addContent(TextInputContent(key, label, value))
         httpHandler.submitWaiter.waitEvent()
         val value = httpHandler.formData?.get(key)?.first?.value
         return value

@@ -35,5 +35,5 @@ private suspend fun KTWebIO.inputDemo() {
 }
 
 fun main() = webIOBlock {
-    inputDemo()
+    storyDemo()
 }
